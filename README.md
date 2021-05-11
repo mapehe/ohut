@@ -2,7 +2,7 @@
 
 `ohut` is a small pair programming tool that keeps two instances of a git
 repo in sync in real time. Any time a file system event is recorded
-a git patch is sent through a socekt and applied at the receiving end. An instance of
+a git patch is sent through a socket and applied at the receiving end. An instance of
 a simple [relay server](https://github.com/three-consulting/ohut-server) is
 used in communicating the patches to the receiving end.
 
