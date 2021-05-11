@@ -4,7 +4,7 @@
 repo in sync in real time. Any time a file system event is recorded
 a git patch is sent through a socket and applied at the receiving end. An instance of
 a simple [relay server](https://github.com/three-consulting/ohut-server) is
-used in communicating the patches to the receiving end.
+used in communicating the patches.
 
 Unlike most existing solutions, `ohut` strives to be minimal.
 It's essentially just a thin layer of automation on git that leverages the
