@@ -1,25 +1,25 @@
 export default class DebouncedArray<A> {
-  previousUpdate: number;
+  previousUpdate: number
 
-  data: A[] = [];
+  data: A[] = []
 
-  debounceRate: number;
+  debounceRate: number
 
   constructor(data: A[], debounceRate: number) {
-    this.data = data;
-    this.previousUpdate = Date.now();
-    this.debounceRate = debounceRate;
+    this.data = data
+    this.previousUpdate = Date.now()
+    this.debounceRate = debounceRate
   }
 
   push = (entry: A) => {
     if (Date.now() - this.previousUpdate > this.debounceRate) {
-      this.data.push(entry);
-      this.previousUpdate = Date.now();
+      this.data.push(entry)
+      this.previousUpdate = Date.now()
     }
-  };
+  }
 
   flush = () => {
-    this.data = [];
-    this.previousUpdate = Date.now();
-  };
+    this.data = []
+    this.previousUpdate = Date.now()
+  }
 }

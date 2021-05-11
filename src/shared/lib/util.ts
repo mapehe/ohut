@@ -1,122 +1,118 @@
+import { createPrivateKey, createPublicKey } from 'crypto'
 import {
   configFile,
   configPadding,
-  localEncoding,
-  transmissionEncoding,
-} from "../const/global";
-import strings from "../const/strings";
-import { Config, NamedKey } from "../const/types";
-import { parseConfig } from "./parsers";
+  encoding,
+  privateKeyFile,
+  publicKeyFile
+} from '../const/global'
+import strings from '../const/strings'
+import { Config, Keys, NamedKey } from '../const/types'
+import { parseConfig } from './parsers'
 
-const crypto = require("crypto");
-const fs = require("fs");
-const readline = require("readline");
+const fs = require('fs')
+const readline = require('readline')
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout,
-});
-
-const silentFailDeleteFiles = async (fileNames: string[]) =>
-  Promise.all(
-    fileNames.map(async (filename) => {
-      try {
-        return fs.unlinkSync(filename);
-      } catch (error) {
-        return undefined;
-      }
-    })
-  );
+  output: process.stdout
+})
 
 export const question = (prompt: string): Promise<string> =>
   new Promise((resolve) => {
     rl.question(prompt, (answer: string) => {
-      resolve(answer);
-    });
-  });
+      resolve(answer)
+    })
+  })
 
-export const isYes = (s: string) => s.toLocaleLowerCase() === "y";
+export const isYes = (s: string) => s.toLocaleLowerCase() === 'y'
 
 export const parseAuthorInfo = (
   config: string
 ): { name: string; email: string } | undefined => {
   try {
-    const configArray = config.split("\n").map((l: string) => l.split("="));
-    const email = configArray.find((x) => x[0] === "user.email");
-    const name = configArray.find((x) => x[0] === "user.name");
+    const configArray = config.split('\n').map((l: string) => l.split('='))
+    const email = configArray.find((x) => x[0] === 'user.email')
+    const name = configArray.find((x) => x[0] === 'user.name')
     if (name && email) {
-      return { name: name[1], email: email[1] };
+      return { name: name[1], email: email[1] }
     }
-    return undefined;
+    return undefined
   } catch (e) {
-    console.log(e);
-    return undefined;
+    console.log(e)
+    return undefined
   }
-};
+}
 
 export const validPublicKey = (key: string): boolean => {
   try {
-    const verifier = crypto.createVerify("RSA-SHA512");
-    verifier.update("__JUNK__");
-    verifier.verify(
-      Buffer.from(key, localEncoding),
-      Buffer.from("__JUNK___", transmissionEncoding)
-    );
-    return true;
+    createPublicKey(key)
+    return true
   } catch (e) {
-    return false;
+    return false
   }
-};
+}
 
-export const getTrustedKeys = (trustedKeysDir: string): NamedKey[] =>
-  fs
-    .readdirSync(trustedKeysDir)
-    .map((filename: string) => {
+export const getTrustedKeys = (trustedKeysDir: string): NamedKey[] => {
+  try {
+    const keyFileNames: string[] = fs.readdirSync(trustedKeysDir)
+    return keyFileNames.reduce<NamedKey[]>((keyList, keyFile) => {
       try {
-        return {
-          name: filename,
-          key: fs.readFileSync(`${trustedKeysDir}/${filename}`).toString(),
-        };
-      } catch {
-        return { name: "", key: "" };
+        const keyObject = createPublicKey(
+          fs.readFileSync(`${trustedKeysDir}/${keyFile}`, encoding)
+        )
+        return keyList.concat([{ name: keyFile, key: keyObject }])
+      } catch (error) {
+        return keyList
       }
-    })
-    .filter(({ key }: any) => validPublicKey(key));
+    }, [])
+  } catch {
+    throw strings.log.shared.error.missingOrInvalidConfiguration
+  }
+}
 
 export const getConfig = (): Config => {
   try {
-    return parseConfig(fs.readFileSync(configFile, localEncoding));
+    return parseConfig(fs.readFileSync(configFile, encoding))
   } catch {
-    throw strings.log.shared.error.missingOrInvalidConfiguration;
+    throw strings.log.shared.error.missingOrInvalidConfiguration
   }
-};
+}
+
+export const getKeys = (): Keys => {
+  try {
+    return {
+      publicKey: createPublicKey(fs.readFileSync(publicKeyFile)),
+      privateKey: createPrivateKey(fs.readFileSync(privateKeyFile))
+    }
+  } catch {
+    throw strings.log.shared.error.missingOrInvalidConfiguration
+  }
+}
+
+export const writeKeys = (keys: Keys) => {
+  try {
+    const { publicKey, privateKey } = keys
+    const publicKeyStr = publicKey
+      .export({ format: 'pem', type: 'pkcs1' })
+      .toString()
+    const privateKeyStr = privateKey
+      .export({ format: 'pem', type: 'pkcs8' })
+      .toString()
+    fs.writeFileSync(publicKeyFile, publicKeyStr)
+    fs.writeFileSync(privateKeyFile, privateKeyStr)
+  } catch {
+    throw strings.log.shared.error.missingOrInvalidConfiguration
+  }
+}
 
 export const updateConfig = (config: Config) => {
   try {
     return fs.writeFileSync(
       configFile,
-      JSON.stringify(config, null, configPadding).concat("\n")
-    );
+      JSON.stringify(config, null, configPadding).concat('\n')
+    )
   } catch {
-    throw strings.log.shared.error.configWriteFailed;
+    throw strings.log.shared.error.configWriteFailed
   }
-};
-
-export const newFilesInPatch = (patch: string): string[] => {
-  const addBlockRegex = new RegExp(
-    "diff --git a/.+? b/.+?\nnew file mode [0-9]{6}\nindex [0-9a-f]{7}..[0-9a-f]{7}\n",
-    "g"
-  );
-  const filenameRegex = new RegExp("diff --git a/.+ b/(?<filename>.+)");
-  return Array.from(patch.matchAll(addBlockRegex))
-    .map((match) => match[0].split("\n")[0])
-    .map((t) => t.match(filenameRegex)?.groups?.filename)
-    .reduce<string[]>((acc, value) => (value ? acc.concat([value]) : acc), []);
-};
-
-export const removeNewFilesInPatchFile = async (tmpFile: string) => {
-  if (fs.existsSync(tmpFile)) {
-    const newFiles = newFilesInPatch(fs.readFileSync(tmpFile).toString());
-    await silentFailDeleteFiles(newFiles);
-  }
-};
+}

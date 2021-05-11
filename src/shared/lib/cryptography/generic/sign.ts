@@ -1,26 +1,20 @@
-import {
-  localEncoding,
-  signingAlgorithm,
-  transmissionEncoding,
-} from "../../../const/global";
+import { KeyObject } from 'crypto'
+import { signingAlgorithm } from '../../../const/global'
 
-const crypto = require("crypto");
+const crypto = require('crypto')
 
-export const signData = (data: string, privateKey: string): string => {
-  const signer = crypto.createSign(signingAlgorithm);
-  signer.update(data);
-  return signer.sign(privateKey, transmissionEncoding);
-};
+export const signData = (data: Buffer, privateKey: KeyObject): Buffer => {
+  const signer = crypto.createSign(signingAlgorithm)
+  signer.update(data)
+  return signer.sign(privateKey)
+}
 
 export const validateSignature = (
-  data: string,
-  publicKey: string,
-  signature: string
+  data: Buffer,
+  publicKey: Buffer,
+  signature: Buffer
 ): boolean => {
-  const verifier = crypto.createVerify(signingAlgorithm);
-  verifier.update(data);
-  return verifier.verify(
-    Buffer.from(publicKey, localEncoding),
-    Buffer.from(signature, transmissionEncoding)
-  );
-};
+  const verifier = crypto.createVerify(signingAlgorithm)
+  verifier.update(data)
+  return verifier.verify(publicKey, signature)
+}

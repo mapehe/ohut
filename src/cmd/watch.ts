@@ -1,19 +1,13 @@
-import { getHead, applyPatch, isGitRepo } from "../shared/lib/console";
-import { initSocket, registerLocalListeners } from "../shared/lib/event/init";
-import { Config, Keys, NamedKey } from "../shared/const/types";
-import {
-  publicKey,
-  privateKey,
-  trustedKeysDir,
-  localEncoding,
-} from "../shared/const/global";
-import { getConfig, getTrustedKeys } from "../shared/lib/util";
-import strings from "../shared/const/strings";
-import { emitPatch } from "../shared/lib/event/socketEmitters";
-import EventQueue from "../shared/const/class/EventQueue";
+import { getHead, applyPatch, isGitRepo } from '../shared/lib/console'
+import { initSocket, registerLocalListeners } from '../shared/lib/event/init'
+import { Config, Keys, NamedKey } from '../shared/const/types'
+import { trustedKeysDir } from '../shared/const/global'
+import { getConfig, getKeys, getTrustedKeys } from '../shared/lib/util'
+import strings from '../shared/const/strings'
+import { emitPatch } from '../shared/lib/event/socketEmitters'
+import EventQueue from '../shared/const/class/EventQueue'
 
-const fs = require("fs");
-const loadingSpinner = require("loading-spinner");
+const loadingSpinner = require('loading-spinner')
 
 const eventLoop = async (
   events: EventQueue,
@@ -25,28 +19,28 @@ const eventLoop = async (
   refreshRate: number,
   tmpFile: string
 ) => {
-  const { stdout: head } = await getHead();
-  const latestRemoteEvent = events.getLatestRemoteEvent(head);
-  const latestLocalEvent = events.getLatestLocalEvent();
+  const { stdout: head } = await getHead()
+  const latestRemoteEvent = events.getLatestRemoteEvent(head)
+  const latestLocalEvent = events.getLatestLocalEvent()
 
   if (latestRemoteEvent) {
-    const { name, email } = latestRemoteEvent.author;
+    const { name, email } = latestRemoteEvent.author
     console.log(
       strings.log.cmd.watch.info.applyPatch(
         name || strings.common.unknown,
         email || strings.common.unknown
       )
-    );
-    await applyPatch(latestRemoteEvent, tmpFile);
-    events.local.flush();
-    events.remote.flush();
+    )
+    await applyPatch(latestRemoteEvent, tmpFile)
+    events.local.flush()
+    events.remote.flush()
   } else if (latestLocalEvent) {
     if (!passive) {
       await Promise.all(
         destinationKeys.map((key) => emitPatch(head, socket, keys, key.key))
-      );
+      )
     }
-    events.local.flush();
+    events.local.flush()
   }
 
   return new Promise((resolve) => {
@@ -62,10 +56,10 @@ const eventLoop = async (
           refreshRate,
           tmpFile
         )
-      );
-    }, refreshRate);
-  });
-};
+      )
+    }, refreshRate)
+  })
+}
 
 export const watch = async (
   serverName: string,
@@ -76,25 +70,22 @@ export const watch = async (
   refreshRate: number,
   tmpFile: string
 ) => {
-  const config = getConfig();
-  const host = config.servers.find(({ name }) => name === serverName);
+  const config = getConfig()
+  const host = config.servers.find(({ name }) => name === serverName)
   if (host) {
-    const eventQueue = new EventQueue(debounceRate);
-    const keys = {
-      publicKey: fs.readFileSync(publicKey, localEncoding).toString(),
-      privateKey: fs.readFileSync(privateKey, localEncoding).toString(),
-    };
-    const allTrustedKeys = getTrustedKeys(trustedKeysDir);
-    const trustedKeyNames = allTrustedKeys.map(({ name }) => name);
+    const eventQueue = new EventQueue(debounceRate)
+    const keys = getKeys()
+    const allTrustedKeys = getTrustedKeys(trustedKeysDir)
+    const trustedKeyNames = allTrustedKeys.map(({ name }) => name)
     keyNames.forEach((keyName) => {
       if (!trustedKeyNames.includes(keyName)) {
-        throw strings.log.cmd.watch.error.invalidTrustedKeyName(keyName);
+        throw strings.log.cmd.watch.error.invalidTrustedKeyName(keyName)
       }
-    });
+    })
     const destinationKeys = allKeys
       ? allTrustedKeys
-      : allTrustedKeys.filter(({ name }) => keyNames.includes(name));
-    const senderKeys = destinationKeys;
+      : allTrustedKeys.filter(({ name }) => keyNames.includes(name))
+    const senderKeys = destinationKeys
     if (await isGitRepo()) {
       if (destinationKeys.length > 0) {
         const socket = initSocket(
@@ -103,8 +94,8 @@ export const watch = async (
           keys,
           senderKeys,
           loadingSpinner
-        );
-        registerLocalListeners(eventQueue);
+        )
+        registerLocalListeners(eventQueue)
         await eventLoop(
           eventQueue,
           socket,
@@ -114,19 +105,19 @@ export const watch = async (
           passive,
           refreshRate,
           tmpFile
-        );
+        )
       } else {
-        throw strings.log.cmd.watch.error.noTrustedKeys;
+        throw strings.log.cmd.watch.error.noTrustedKeys
       }
     } else {
-      throw strings.log.cmd.watch.error.notInGitRepo;
+      throw strings.log.cmd.watch.error.notInGitRepo
     }
   } else {
-    throw strings.log.cmd.watch.error.noSuchServer(serverName);
+    throw strings.log.cmd.watch.error.noSuchServer(serverName)
   }
-};
+}
 
-export const { command, desc } = strings.cmd.watch;
+export const { command, desc } = strings.cmd.watch
 export const builder = (yargs: any) => {
   yargs
     .boolean(strings.cmd.watch.boolean.allKeys.name)
@@ -194,10 +185,10 @@ export const builder = (yargs: any) => {
     .default(
       strings.cmd.watch.option.password.name,
       strings.cmd.watch.option.password.default
-    );
-};
+    )
+}
 export const handler = (argv: any) => {
-  const keyNames: string[] = Array.from(new Set(argv.keys));
+  const keyNames: string[] = Array.from(new Set(argv.keys))
   watch(
     argv.server,
     keyNames,
@@ -210,7 +201,7 @@ export const handler = (argv: any) => {
   )
     .then(() => process.exit(0))
     .catch((error) => {
-      console.log(error);
-      process.exit(1);
-    });
-};
+      console.log(error)
+      process.exit(1)
+    })
+}

@@ -1,57 +1,62 @@
+import { KeyObject } from 'crypto'
+
 export type Config = {
-  servers: { name: string; url: string }[];
-};
+  servers: { name: string; url: string }[]
+}
 
 export type Keys = {
-  publicKey: string;
-  privateKey: string;
-};
+  publicKey: KeyObject
+  privateKey: KeyObject
+}
 
 export type NamedKey = {
-  name: string;
-  key: string;
-};
+  name: string
+  key: KeyObject
+}
 
 export type FsEvent = {
-  timestamp: number;
+  timestamp: number
   metadata: {
-    event: string;
-    path: string;
-  };
-};
+    event: string
+    path: string
+  }
+}
 
 export type Patch = {
-  head: string;
-  patch: string;
-  timestamp: number;
-  author: { name: string | undefined; email: string | undefined };
-};
+  head: string
+  patch: string
+  timestamp: number
+  author: { name: string | undefined; email: string | undefined }
+}
+
+export interface PatchWithDestination extends Patch {
+  destinationKey: string
+}
 
 export type PatchHeader = {
-  key: Buffer;
-  iv: Buffer;
-};
+  key: Buffer
+  iv: Buffer
+}
 
 export type DecryptedPatch = {
-  patch: Patch;
-  encryptedHeader: string;
-  signature: string;
-  senderKey: string;
-};
+  patchWithDestination: PatchWithDestination
+  signature: Buffer
+  senderKey: Buffer
+}
 
 export type EncryptedPatch = {
-  destinationKey: string;
-  senderKey: string;
-  data: string;
-  header: string;
-  signature: string;
-};
+  destinationKey: Buffer
+  senderKey: Buffer
+  data: Buffer
+  header: Buffer
+  signature: Buffer
+}
 
-export type ConsoleOutput = { stdout: string; stderr: string };
+export type ConsoleOutput = { stdout: string; stderr: string }
 
 export type SocketIOEvent =
-  | "connect"
-  | "connect-error"
-  | "patch"
-  | "hello"
-  | "challenge";
+  | 'connect'
+  | 'connect-error'
+  | 'patch'
+  | 'hello'
+  | 'challenge'

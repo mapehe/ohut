@@ -1,26 +1,26 @@
-import EventQueue from "../../const/class/EventQueue";
+import EventQueue from '../../const/class/EventQueue'
 import {
   EncryptedPatch,
   Keys,
   SocketIOEvent,
-  NamedKey,
-} from "../../const/types";
-import { connectSocket } from "./socketEmitters";
+  NamedKey
+} from '../../const/types'
+import { connectSocket } from './socketEmitters'
 import {
   challengeHandler,
   connectErrorHandler,
   connectHandler,
   helloHandler,
-  patchHandler,
-} from "./socketReceivers";
+  patchHandler
+} from './socketReceivers'
 
-const chokidar = require("chokidar");
+const chokidar = require('chokidar')
 
 const registerSocketEventHandler = (
   event: SocketIOEvent,
   socket: any,
   handler: any
-) => socket.on(event, handler);
+) => socket.on(event, handler)
 
 export const registerSocketReceivers = (
   socket: any,
@@ -29,24 +29,24 @@ export const registerSocketReceivers = (
   keys: Keys,
   loadingSpinner: any
 ) => {
-  registerSocketEventHandler("connect", socket, () =>
+  registerSocketEventHandler('connect', socket, () =>
     connectHandler(loadingSpinner)
-  );
-  registerSocketEventHandler("connect-error", socket, (error: any) =>
+  )
+  registerSocketEventHandler('connect-error', socket, (error: any) =>
     connectErrorHandler(error)
-  );
-  registerSocketEventHandler("patch", socket, (patch: EncryptedPatch) =>
+  )
+  registerSocketEventHandler('patch', socket, (patch: EncryptedPatch) =>
     patchHandler(patch, senderKeys, eventQueue, keys)
-  );
-  registerSocketEventHandler("hello", socket, (message: string) =>
+  )
+  registerSocketEventHandler('hello', socket, (message: string) =>
     helloHandler(message)
-  );
-  registerSocketEventHandler("challenge", socket, (challenge: string) =>
+  )
+  registerSocketEventHandler('challenge', socket, (challenge: Buffer) =>
     challengeHandler(challenge, socket, keys)
-  );
+  )
 
-  return socket;
-};
+  return socket
+}
 
 export const initSocket = (
   eventQueue: EventQueue,
@@ -61,13 +61,13 @@ export const initSocket = (
     eventQueue,
     keys,
     loadingSpinner
-  );
+  )
 
 export const registerLocalListeners = (eventQueue: EventQueue) => {
-  chokidar.watch(".").on("all", (event: string, path: string) => {
+  chokidar.watch('.').on('all', (event: string, path: string) => {
     eventQueue.local.push({
       timestamp: Date.now(),
-      metadata: { event, path },
-    });
-  });
-};
+      metadata: { event, path }
+    })
+  })
+}

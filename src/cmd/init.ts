@@ -1,60 +1,59 @@
-import { initKeys } from "../shared/lib/console";
-import { isYes, question, updateConfig } from "../shared/lib/util";
-import strings from "../shared/const/strings";
+import { isYes, question, updateConfig, writeKeys } from '../shared/lib/util'
+import strings from '../shared/const/strings'
 import {
   configDir,
-  privateKey,
   keysDir,
   trustedKeysDir,
-  defaultConfig,
-} from "../shared/const/global";
+  defaultConfig
+} from '../shared/const/global'
+import generateKeys from '../shared/lib/cryptography/generic/keys'
 
-const fs = require("fs");
+const fs = require('fs')
 
-const configDirExists = () => fs.existsSync(configDir);
+const configDirExists = () => fs.existsSync(configDir)
 
 const createDirs = () => {
-  fs.mkdirSync(configDir);
-  fs.mkdirSync(keysDir);
-  fs.mkdirSync(trustedKeysDir);
-};
+  fs.mkdirSync(configDir)
+  fs.mkdirSync(keysDir)
+  fs.mkdirSync(trustedKeysDir)
+}
 
-const createConfigFile = () => updateConfig(defaultConfig);
+const createConfigFile = () => updateConfig(defaultConfig)
 
 const createKeys = async () => {
-  const email = await question(strings.log.cmd.init.prompt.email);
-  await initKeys(privateKey, email);
-};
+  const keys = await generateKeys()
+  await writeKeys(keys)
+}
 
 const newConfig = async () => {
-  createDirs();
-  await createConfigFile();
-  await createKeys();
-  console.log(strings.log.cmd.init.info.configCreated(configDir));
-};
+  createDirs()
+  await createConfigFile()
+  await createKeys()
+  console.log(strings.log.cmd.init.info.configCreated(configDir))
+}
 
 const init = async () => {
   if (configDirExists()) {
     const answer = await question(
       strings.log.cmd.init.prompt.confirmOverwrite(configDir)
-    );
+    )
     if (isYes(answer)) {
-      fs.rmdirSync(configDir, { recursive: true });
-      await newConfig();
+      fs.rmdirSync(configDir, { recursive: true })
+      await newConfig()
     } else {
-      throw strings.common.aborted;
+      throw strings.common.aborted
     }
   } else {
-    await newConfig();
+    await newConfig()
   }
-};
+}
 
-export const { command, desc } = strings.cmd.init;
+export const { command, desc } = strings.cmd.init
 export const handler = () => {
   init()
     .then(() => process.exit(0))
     .catch((error) => {
-      console.log(error);
-      process.exit(1);
-    });
-};
+      console.log(error)
+      process.exit(1)
+    })
+}
