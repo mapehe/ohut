@@ -2,11 +2,24 @@
 
 `ohut` is a small pair programming tool that keeps two instances of a git
 repo in sync in real time. Any time a file system event is recorded
-a git patch is sent upstream and applied at the receiving end.
+a git patch is sent through a socekt and applied at the receiving end. An instance of
+a simple [relay server](https://github.com/three-consulting/ohut-server) is
+used in communicating the patches to the receiving end.
 
-`ohut` is still at a development phase and has NOT yet been proven to be a secure
-production-grade tool. You are encouraged to open up issues on bugs, feature
-requests and especially security.
+Unlike most existing solutions, `ohut` strives to be minimal.
+It's essentially just a thin layer of automation on git that leverages the
+powerful existing libraries such as [socket.io](https://github.com/socketio/socket.io)
+and [chokidar](https://github.com/paulmillr/chokidar) for its features and standard cryptographic
+techniques for its encryption and authentication scheme.
+
+Install `ohut` via npm:
+
+```
+npm install --global ohut
+```
+
+The project is currently at a public beta. You are encouraged to open up issues on bugs,
+feature requests and **especially security**.
 
 ## Setting up
 
@@ -70,7 +83,7 @@ ohut watch <server> [keys...]
 
 The parameter `<server>` is the server name created at section `Adding a server`. The optional
 parameter `[keys...]` is a list of trusted key names created with `ohut key trust`. You will send and
-receive patches from clients specified by `[keys...]` that connected to `<server>`.
+receive patches from clients specified by `[keys...]` that are connected to `<server>`.
 
 For example, if Alice has added a server called `sierra` and wants to send and receive patches from Bob, whose
 trusted key is called `bob`, they can run:
@@ -105,11 +118,10 @@ We have tried to make `ohut` easy and smooth to use, but there are some potentia
 
 ## Security
 
-Since `ohut` gives a remote user write access to your device, security is a major priority. This
-section gives a brief overview of the security scheme. You are encouraged to point out any potential
-pitfalls by opening up an issue.
+All `ohut` traffic is end-to-end encrypted and cryptographically signed. This section details the
+encryption scheme.
 
-We assume the existence of a reliable channel for the users to share their public keys with each
+We assume the existence of a reliable external channel for the users to share their public keys with each
 other. After the keys are shared, an encrypted `ohut` patch is of the following form:
 
 ```
@@ -123,17 +135,16 @@ other. After the keys are shared, an encrypted `ohut` patch is of the following 
 ```
 
 The value `destinationKey` is used by the relay server to emit the message to the correct sockets.
-The value `header` is asymmetrically encrypted using the 3072 bit `destinationKey` and contains
-a 256 bit random symmetric key and a 128 bit random initalization vector, both newly generated for
-each patch. The symmetric key and the initalization vector contained in the header are used to
-symmetrically encrypt and decrypt the field `data` that carries the actual patch.
+The value `header` is asymmetrically encrypted using 3072 bit RSA public key `destinationKey`. The
+plaintext `header` contains the symmetric key and the initalization vector which are used in encrypting
+the actual patch data `data` with 256 bit AES.
 
-The authenticity of the field `senderKey` is proved by validating `signature` that is a signature
-created from the plaintext version of `data` using the private key corresponding to `senderKey`. When
-the authenticity of `senderKey` has been established, it is compared against the trusted keys
-added by the user.
+The field `signature` contains a RSA-SHA512 signature of the plaintext `data` created using the private key
+corresponding to `senderKey`. When the authenticity of `senderKey` is hence established, it is compared against
+the keys the user has added in their trusted keys.
 
-Upon connecting to the standard implementation of the `ohut` relay server, the client presents its
-public key and the server responds with 1024 bits of random data encrypted with that key. The client
-then proves that it controls the corresponding private key by decrypting the message. The client will
-then only receive messages with `destinationKey` matching with their public key.
+The keys are also used as an authentication mechanism on the relay-server. Upon connecting to the
+[standard implementation](https://github.com/three-consulting/ohut-server) of the `ohut` relay server, the
+client presents their public key and the server responds with random data encrypted with that key. The
+client must then successfully decrypt the data in order to start receiving patches whose `destinationKey`
+equals their public key or send patches whose `senderKey` equals their public key.
