@@ -42,11 +42,6 @@ const strings = {
             "Local file system event debounce rate. If the time interval between two local events is less than --debounce-rate they will be handled as a single event.",
           default: defaultDebounceRate,
         },
-        tmpFile: {
-          name: "tmp-file",
-          alias: "t",
-          describe: "A temporary file used by ohut for storing patches.",
-        },
       },
     },
     server: {

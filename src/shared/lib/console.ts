@@ -1,13 +1,9 @@
-import { ConsoleOutput, Patch } from "../const/types";
-import { newFilesInPatch, removeNewFilesInPatchFile } from "./util";
+import { ConsoleOutput } from "../const/types";
 
-const fs = require("fs");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
-const writeFile = util.promisify(fs.writeFile);
-
-const gitAdd = async (filename: string): Promise<ConsoleOutput> =>
+export const gitAdd = async (filename: string): Promise<ConsoleOutput> =>
   exec(`git add ${filename}`);
 
 export const getHead = async (): Promise<ConsoleOutput> =>
@@ -22,26 +18,10 @@ export const getGitConfig = async (): Promise<ConsoleOutput> =>
 export const resetHead = async (): Promise<ConsoleOutput> =>
   exec("git reset --hard HEAD");
 
+export const applyPatch = (tmpFile: string) =>
+  exec(`cat ${tmpFile} | git apply`);
+
 export const isGitRepo = async (): Promise<Boolean> =>
   exec("[ -d .git ] && echo .git || git rev-parse --git-dir > /dev/null 2>&1")
     .then(() => true)
     .catch(() => false);
-
-export const applyPatch = async (
-  patch: Patch,
-  tmpFile: string
-): Promise<void> => {
-  await resetHead();
-  await removeNewFilesInPatchFile(tmpFile);
-  if (patch.patch.length > 0) {
-    await writeFile(tmpFile, patch.patch);
-    await exec(`cat ${tmpFile} | git apply`);
-    const newFiles = newFilesInPatch(fs.readFileSync(tmpFile).toString());
-    newFiles.reduce(
-      (prev, file) => prev.then(async () => gitAdd(file)),
-      Promise.resolve()
-    );
-  } else if (fs.existsSync(tmpFile)) {
-    fs.unlinkSync(tmpFile);
-  }
-};

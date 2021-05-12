@@ -1,4 +1,4 @@
-import { getHead, applyPatch, isGitRepo } from "../shared/lib/console";
+import { getHead, isGitRepo } from "../shared/lib/console";
 import { initSocket, registerLocalListeners } from "../shared/lib/event/init";
 import { Config, Keys, NamedKey } from "../shared/const/types";
 import { trustedKeysDir } from "../shared/const/global";
@@ -6,6 +6,7 @@ import { getConfig, getKeys, getTrustedKeys } from "../shared/lib/util";
 import strings from "../shared/const/strings";
 import { emitPatch } from "../shared/lib/event/socketEmitters";
 import EventQueue from "../shared/const/class/EventQueue";
+import handlePatch from "../shared/lib/patchHandlers";
 
 const loadingSpinner = require("loading-spinner");
 
@@ -31,7 +32,7 @@ const eventLoop = async (
         email || strings.common.unknown
       )
     );
-    await applyPatch(latestRemoteEvent, tmpFile);
+    await handlePatch(latestRemoteEvent, tmpFile);
     events.local.flush();
     events.remote.flush();
   } else if (latestLocalEvent) {
@@ -164,15 +165,6 @@ export const builder = (yargs: any) => {
       strings.cmd.watch.option.refreshRate.name,
       strings.cmd.watch.option.refreshRate.default
     )
-    .option(strings.cmd.watch.option.tmpFile.name)
-    .alias(
-      strings.cmd.watch.option.tmpFile.name,
-      strings.cmd.watch.option.tmpFile.alias
-    )
-    .describe(
-      strings.cmd.watch.option.tmpFile.name,
-      strings.cmd.watch.option.tmpFile.describe
-    )
     .option(strings.cmd.watch.option.password.name)
     .alias(
       strings.cmd.watch.option.password.name,
@@ -189,6 +181,7 @@ export const builder = (yargs: any) => {
 };
 export const handler = (argv: any) => {
   const keyNames: string[] = Array.from(new Set(argv.keys));
+  const now = String(Date.now());
   watch(
     argv.server,
     keyNames,
@@ -196,8 +189,7 @@ export const handler = (argv: any) => {
     argv[strings.cmd.watch.boolean.passive.name],
     argv[strings.cmd.watch.option.debounceRate.name],
     argv[strings.cmd.watch.option.refreshRate.name],
-    argv[strings.cmd.watch.option.tmpFile.name] ||
-      `/tmp/ohut_${String(Date.now())}`
+    `/tmp/ohut_${now}`
   )
     .then(() => process.exit(0))
     .catch((error) => {

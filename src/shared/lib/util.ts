@@ -139,10 +139,3 @@ export const newFilesInPatch = (patch: string): string[] => {
     .map((t) => t.match(filenameRegex)?.groups?.filename)
     .reduce<string[]>((acc, value) => (value ? acc.concat([value]) : acc), []);
 };
-
-export const removeNewFilesInPatchFile = async (tmpFile: string) => {
-  if (fs.existsSync(tmpFile)) {
-    const newFiles = newFilesInPatch(fs.readFileSync(tmpFile).toString());
-    await silentFailDeleteFiles(newFiles);
-  }
-};
