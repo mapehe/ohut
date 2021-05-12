@@ -1,6 +1,6 @@
 import strings from "../../shared/const/strings";
 import {
-  localEncoding,
+  encoding,
   publicKey,
   publicKeyLineCount,
   readlineTimeout,
@@ -36,7 +36,7 @@ const checkInput = async (): Promise<string> =>
 
 const readKeyFile = (filename: string): string => {
   try {
-    const data = fs.readFileSync(filename, localEncoding);
+    const data = fs.readFileSync(filename, encoding);
     if (validPublicKey(data)) {
       return data;
     }
@@ -55,7 +55,7 @@ const duplicateCheck = (data: string) => {
 };
 
 const ownKeyCheck = (data: string, force: boolean) => {
-  const ownKey = fs.readFileSync(publicKey, localEncoding).toString();
+  const ownKey = fs.readFileSync(publicKey, encoding).toString();
   if (ownKey === data && !force) {
     throw strings.log.cmd.key.subcommand.trust.error.ownKeyError;
   }

@@ -1,11 +1,12 @@
 import {
   configFile,
   configPadding,
-  localEncoding,
-  transmissionEncoding,
+  encoding,
+  privateKey,
+  publicKey,
 } from "../const/global";
 import strings from "../const/strings";
-import { Config, NamedKey } from "../const/types";
+import { Config, Keys, NamedKey } from "../const/types";
 import { parseConfig } from "./parsers";
 
 const crypto = require("crypto");
@@ -59,8 +60,8 @@ export const validPublicKey = (key: string): boolean => {
     const verifier = crypto.createVerify("RSA-SHA512");
     verifier.update("__JUNK__");
     verifier.verify(
-      Buffer.from(key, localEncoding),
-      Buffer.from("__JUNK___", transmissionEncoding)
+      Buffer.from(key, encoding),
+      Buffer.from("__JUNK___", encoding)
     );
     return true;
   } catch (e) {
@@ -68,24 +69,49 @@ export const validPublicKey = (key: string): boolean => {
   }
 };
 
-export const getTrustedKeys = (trustedKeysDir: string): NamedKey[] =>
-  fs
-    .readdirSync(trustedKeysDir)
-    .map((filename: string) => {
-      try {
-        return {
-          name: filename,
-          key: fs.readFileSync(`${trustedKeysDir}/${filename}`).toString(),
-        };
-      } catch {
-        return { name: "", key: "" };
-      }
-    })
-    .filter(({ key }: any) => validPublicKey(key));
+export const getTrustedKeys = (trustedKeysDir: string): NamedKey[] => {
+  try {
+    return fs
+      .readdirSync(trustedKeysDir)
+      .map((filename: string) => {
+        try {
+          return {
+            name: filename,
+            key: fs.readFileSync(`${trustedKeysDir}/${filename}`).toString(),
+          };
+        } catch {
+          return { name: "", key: "" };
+        }
+      })
+      .filter(({ key }: any) => validPublicKey(key));
+  } catch {
+    throw strings.log.shared.error.missingOrInvalidConfiguration;
+  }
+};
 
 export const getConfig = (): Config => {
   try {
-    return parseConfig(fs.readFileSync(configFile, localEncoding));
+    return parseConfig(fs.readFileSync(configFile, encoding));
+  } catch {
+    throw strings.log.shared.error.missingOrInvalidConfiguration;
+  }
+};
+
+export const getKeys = (): Keys => {
+  try {
+    return {
+      publicKey: fs.readFileSync(publicKey),
+      privateKey: fs.readFileSync(privateKey),
+    };
+  } catch {
+    throw strings.log.shared.error.missingOrInvalidConfiguration;
+  }
+};
+
+export const writeKeys = (keys: Keys) => {
+  try {
+    fs.writeFileSync(publicKey, keys.publicKey);
+    fs.writeFileSync(privateKey, keys.privateKey);
   } catch {
     throw strings.log.shared.error.missingOrInvalidConfiguration;
   }

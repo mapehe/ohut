@@ -27,14 +27,6 @@ export const isGitRepo = async (): Promise<Boolean> =>
     .then(() => true)
     .catch(() => false);
 
-export const initKeys = async (
-  keyfile: string,
-  email: string
-): Promise<ConsoleOutput> => {
-  await exec(`ssh-keygen -m PKCS8 -C "${email}" -f ${keyfile} -q -N ""`);
-  return exec(`ssh-keygen -e -m PKCS8 -f ${keyfile}.pub > ${keyfile}.pkcs8`);
-};
-
 export const applyPatch = async (
   patch: Patch,
   tmpFile: string

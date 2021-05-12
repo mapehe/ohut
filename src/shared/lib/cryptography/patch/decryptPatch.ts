@@ -1,14 +1,18 @@
-import { localEncoding, transmissionEncoding } from "../../../const/global";
+import { privateDecrypt } from "crypto";
+import { encoding } from "../../../const/global";
 import { DecryptedPatch, EncryptedPatch, Keys } from "../../../const/types";
 import { parsePatchHeader, parsePatch } from "../../parsers";
-import { privateDecryptData, symmetricDecrypt } from "../generic/encrypt";
+import { symmetricDecrypt } from "../generic/encrypt";
 
 const decryptPatch = (
   encryptedPatch: EncryptedPatch,
   keys: Keys
 ): DecryptedPatch => {
   const header = parsePatchHeader(
-    privateDecryptData(encryptedPatch.header, keys.privateKey)
+    privateDecrypt(
+      Buffer.from(keys.privateKey),
+      encryptedPatch.header
+    ).toString(encoding)
   );
   const decryptedData = symmetricDecrypt(
     encryptedPatch.data,
@@ -16,13 +20,9 @@ const decryptPatch = (
     header.iv
   );
   return {
-    encryptedHeader: encryptedPatch.header,
-    patch: parsePatch(decryptedData),
+    patch: parsePatch(decryptedData.toString(encoding)),
     signature: encryptedPatch.signature,
-    senderKey: Buffer.from(
-      encryptedPatch.senderKey,
-      transmissionEncoding
-    ).toString(localEncoding),
+    senderKey: encryptedPatch.senderKey,
   };
 };
 

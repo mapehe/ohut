@@ -1,3 +1,4 @@
+import { encoding } from "../../../const/global";
 import strings from "../../../const/strings";
 import { EncryptedPatch, Keys, Patch, NamedKey } from "../../../const/types";
 import decryptPatch from "./decryptPatch";
@@ -12,7 +13,11 @@ const decryptAndValidatePatch = async (
   const { patch } = decryptedPatch;
 
   if (checkPatchSignature(decryptedPatch)) {
-    if (senderKeys.map(({ key }) => key).includes(decryptedPatch.senderKey)) {
+    if (
+      senderKeys
+        .map(({ key }) => key)
+        .includes(decryptedPatch.senderKey.toString(encoding))
+    ) {
       if (await checkPatchHead(patch)) {
         return patch;
       }

@@ -1,11 +1,9 @@
 import strings from "../../shared/const/strings";
-import { localEncoding, publicKey } from "../../shared/const/global";
-
-const fs = require("fs");
+import { getKeys } from "../../shared/lib/util";
 
 const print = async () => {
-  const key = fs.readFileSync(publicKey, localEncoding).toString();
-  process.stdout.write(key);
+  const { publicKey } = getKeys();
+  process.stdout.write(publicKey);
 };
 
 export const { command, desc } = strings.cmd.key.subcommand.print;
