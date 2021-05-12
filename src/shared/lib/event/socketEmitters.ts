@@ -1,18 +1,16 @@
 import { io } from "socket.io-client";
-import {
-  loadingSpinnerInterval,
-  transmissionEncoding,
-} from "../../const/global";
+import { encoding, loadingSpinnerInterval } from "../../const/global";
 import strings from "../../const/strings";
 import { Keys, Patch } from "../../const/types";
 import { getDiff, getGitConfig } from "../console";
 import encryptPatch from "../cryptography/patch/encryptPatch";
-import { parseAuthorInfo } from "../util";
+import { getKeys, parseAuthorInfo } from "../util";
 
 export const connectSocket = (url: string, keys: Keys, loadingSpinner: any) => {
+  const { publicKey } = getKeys();
   const socket = io(url, {
     auth: {
-      publicKey: Buffer.from(keys.publicKey).toString(transmissionEncoding),
+      publicKey: publicKey.toString(encoding),
     },
   });
   process.stdout.write(strings.log.cmd.watch.info.connectingTo(url));

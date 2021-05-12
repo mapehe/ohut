@@ -116,7 +116,7 @@ const strings = {
         prompt: {
           email: "Creating a key pair. Provide your email: ",
           confirmOverwrite: (configDir: string) =>
-            `${configDir} exists. Overwrite (N/y)? `,
+            `${configDir} exists. If you overwrite your private key will be lost forever. Overwrite (N/y)? `,
         },
       },
       watch: {

@@ -41,7 +41,7 @@ export const registerSocketReceivers = (
   registerSocketEventHandler("hello", socket, (message: string) =>
     helloHandler(message)
   );
-  registerSocketEventHandler("challenge", socket, (challenge: string) =>
+  registerSocketEventHandler("challenge", socket, (challenge: Buffer) =>
     challengeHandler(challenge, socket, keys)
   );
 

@@ -1,18 +1,12 @@
 import { getHead, applyPatch, isGitRepo } from "../shared/lib/console";
 import { initSocket, registerLocalListeners } from "../shared/lib/event/init";
 import { Config, Keys, NamedKey } from "../shared/const/types";
-import {
-  publicKey,
-  privateKey,
-  trustedKeysDir,
-  localEncoding,
-} from "../shared/const/global";
-import { getConfig, getTrustedKeys } from "../shared/lib/util";
+import { trustedKeysDir } from "../shared/const/global";
+import { getConfig, getKeys, getTrustedKeys } from "../shared/lib/util";
 import strings from "../shared/const/strings";
 import { emitPatch } from "../shared/lib/event/socketEmitters";
 import EventQueue from "../shared/const/class/EventQueue";
 
-const fs = require("fs");
 const loadingSpinner = require("loading-spinner");
 
 const eventLoop = async (
@@ -80,10 +74,7 @@ export const watch = async (
   const host = config.servers.find(({ name }) => name === serverName);
   if (host) {
     const eventQueue = new EventQueue(debounceRate);
-    const keys = {
-      publicKey: fs.readFileSync(publicKey, localEncoding).toString(),
-      privateKey: fs.readFileSync(privateKey, localEncoding).toString(),
-    };
+    const keys = getKeys();
     const allTrustedKeys = getTrustedKeys(trustedKeysDir);
     const trustedKeyNames = allTrustedKeys.map(({ name }) => name);
     keyNames.forEach((keyName) => {

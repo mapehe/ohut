@@ -1,6 +1,7 @@
+import { privateDecrypt } from "crypto";
 import EventQueue from "../../const/class/EventQueue";
 import { EncryptedPatch, Keys, NamedKey } from "../../const/types";
-import { privateDecryptData } from "../cryptography/generic/encrypt";
+import hashData from "../cryptography/generic/hash";
 import decryptAndValidatePatch from "../cryptography/patch/decryptAndValidatePatch";
 
 export const connectHandler = (loadingSpinner: any) => {
@@ -32,7 +33,11 @@ export const patchHandler = async (
 export const helloHandler = async (message: string) => console.log(message);
 
 export const challengeHandler = async (
-  challenge: string,
+  challenge: Buffer,
   socket: any,
   keys: Keys
-) => socket.emit("challenge", privateDecryptData(challenge, keys.privateKey));
+) => {
+  const decryptedChallenge = privateDecrypt(keys.privateKey, challenge);
+  const solution = hashData(decryptedChallenge);
+  socket.emit("solution", solution);
+};

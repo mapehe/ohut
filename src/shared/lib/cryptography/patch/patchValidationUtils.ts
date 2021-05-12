@@ -1,3 +1,4 @@
+import { encoding } from "../../../const/global";
 import strings from "../../../const/strings";
 import { DecryptedPatch, Patch } from "../../../const/types";
 import { getHead } from "../../console";
@@ -19,6 +20,6 @@ export const checkPatchSignature = (
   decryptedPatch: DecryptedPatch
 ): boolean => {
   const { patch, senderKey: publicKey, signature } = decryptedPatch;
-  const data = JSON.stringify(patch);
+  const data = Buffer.from(JSON.stringify(patch), encoding);
   return validateSignature(data, publicKey, signature);
 };

@@ -1,13 +1,12 @@
-import { initKeys } from "../shared/lib/console";
-import { isYes, question, updateConfig } from "../shared/lib/util";
+import { isYes, question, updateConfig, writeKeys } from "../shared/lib/util";
 import strings from "../shared/const/strings";
 import {
   configDir,
-  privateKey,
   keysDir,
   trustedKeysDir,
   defaultConfig,
 } from "../shared/const/global";
+import generateKeys from "../shared/lib/cryptography/generic/keys";
 
 const fs = require("fs");
 
@@ -22,8 +21,8 @@ const createDirs = () => {
 const createConfigFile = () => updateConfig(defaultConfig);
 
 const createKeys = async () => {
-  const email = await question(strings.log.cmd.init.prompt.email);
-  await initKeys(privateKey, email);
+  const keys = await generateKeys();
+  await writeKeys(keys);
 };
 
 const newConfig = async () => {

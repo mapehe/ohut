@@ -1,16 +1,14 @@
 # `ohut` - A simple remote pair programming tool
 
-`ohut` is a small pair programming tool that keeps two instances of a git
-repo in sync in real time. Any time a file system event is recorded
-a git patch is sent through a socket and applied at the receiving end. An instance of
-a simple [relay server](https://github.com/three-consulting/ohut-server) is
-used in communicating the patches.
+`ohut` is a small pair programming tool that keeps the files of two (or more) instances of a git
+repo in sync in real time. Any time a file system event is recorded a git patch is sent through
+a simple [relay server](https://github.com/three-consulting/ohut-server) and applied a the receiving
+end. All `ohut` traffic is end-to-end encrypted and signed.
 
 Unlike most existing solutions, `ohut` strives to be minimal.
-It's essentially just a thin layer of automation on git that leverages the
+It's essentially just a thin layer of automation on git that leverages standard cryptography and
 powerful existing libraries such as [socket.io](https://github.com/socketio/socket.io)
-and [chokidar](https://github.com/paulmillr/chokidar) for its features and standard cryptographic
-techniques for its encryption and authentication scheme.
+and [chokidar](https://github.com/paulmillr/chokidar).
 
 Install `ohut` via npm:
 
@@ -34,8 +32,8 @@ If this is your first time using `ohut`, you will need to initialize a configura
 ohut init
 ```
 
-This will, among other things generate a key pair. After initialization, you can display
-your public key with `ohut key print`.
+This will, among other things generate a key pair that `ohut` will use. After initialization,
+you can display your public key with `ohut key print`.
 
 ### Adding a server
 
@@ -47,6 +45,14 @@ ohut server add <name> <url>
 
 The parameter `<name>` is simply a custom name for the server at `<url>` for later
 use with `ohut watch`.
+
+If you want to use the public relay server hosted by Three Point Consulting at `https://ohut.three.consulting`:
+
+```
+ohut server add tpc https://ohut.three.consulting
+```
+
+If you want to host your own instance instead, the setup should be trivial.
 
 ### Adding a trusted key
 
@@ -85,23 +91,23 @@ The parameter `<server>` is the server name created at section `Adding a server`
 parameter `[keys...]` is a list of trusted key names created with `ohut key trust`. You will send and
 receive patches from clients specified by `[keys...]` that are connected to `<server>`.
 
-For example, if Alice has added a server called `sierra` and wants to send and receive patches from Bob, whose
+For example, if Alice has added a server called `tpc` and wants to send and receive patches from Bob, whose
 trusted key is called `bob`, they can run:
 
 ```
-ohut watch sierra bob
+ohut watch tpc bob
 ```
 
 If Alice wants to send and receive patches from both Bob and Charlie:
 
 ```
-ohut watch sierra bob charlie
+ohut watch tpc bob charlie
 ```
 
 If Alice wants to send and receive patches from ALL the people whose public keys they have added:
 
 ```
-ohut watch sierra --all
+ohut watch tpc --all
 ```
 
 Run `ohut watch --help` for a complete list of options.
@@ -135,16 +141,18 @@ other. After the keys are shared, an encrypted `ohut` patch is of the following 
 ```
 
 The value `destinationKey` is used by the relay server to emit the message to the correct sockets.
-The value `header` is asymmetrically encrypted using 3072 bit RSA public key `destinationKey`. The
-plaintext `header` contains the symmetric key and the initalization vector which are used in encrypting
-the actual patch data `data` with 256 bit AES.
+The value `header` is asymmetrically encrypted using the 4096 bit RSA public key `destinationKey`. The
+plaintext `header` contains the symmetric key and the initialization vector which are used in encrypting
+the actual patch data `data` with 256 bit AES. The initialization vector and the symmetric key are unique
+to each patch.
 
 The field `signature` contains a RSA-SHA512 signature of the plaintext `data` created using the private key
-corresponding to `senderKey`. When the authenticity of `senderKey` is hence established, it is compared against
-the keys the user has added in their trusted keys.
+corresponding to `senderKey`. This proves that the patch was created by the client holding the private key
+corresponding to `senderKey`. The `senderKey` is then compared against the keys that user has listed
+in `stract watch` and the patch is applied if the list contains `senderKey`.
 
 The keys are also used as an authentication mechanism on the relay-server. Upon connecting to the
 [standard implementation](https://github.com/three-consulting/ohut-server) of the `ohut` relay server, the
-client presents their public key and the server responds with random data encrypted with that key. The
-client must then successfully decrypt the data in order to start receiving patches whose `destinationKey`
-equals their public key or send patches whose `senderKey` equals their public key.
+client presents their public key and the server responds with random encrypted data. The client must then
+successfully respond with the SHA256 hash of the decrypted data in order to start receiving patches with
+`destinationKey` equal to their public key and send patches with `senderKey` equal to their public key.

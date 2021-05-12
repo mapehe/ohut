@@ -3,8 +3,8 @@ export type Config = {
 };
 
 export type Keys = {
-  publicKey: string;
-  privateKey: string;
+  publicKey: Buffer;
+  privateKey: Buffer;
 };
 
 export type NamedKey = {
@@ -34,17 +34,16 @@ export type PatchHeader = {
 
 export type DecryptedPatch = {
   patch: Patch;
-  encryptedHeader: string;
-  signature: string;
-  senderKey: string;
+  signature: Buffer;
+  senderKey: Buffer;
 };
 
 export type EncryptedPatch = {
-  destinationKey: string;
-  senderKey: string;
-  data: string;
-  header: string;
-  signature: string;
+  destinationKey: Buffer;
+  senderKey: Buffer;
+  data: Buffer;
+  header: Buffer;
+  signature: Buffer;
 };
 
 export type ConsoleOutput = { stdout: string; stderr: string };
