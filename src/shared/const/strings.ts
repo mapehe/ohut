@@ -124,7 +124,10 @@ const strings = {
           applyPatch: (authorName: string, authorEmail: string) =>
             `Applying an updated patch from ${authorName} <${authorEmail}>.`,
           connectingTo: (host: string) =>
-            `Establishing a connection to ${host}...`
+            `Establishing a connection to ${host}...`,
+          generatingSessionPublicKey: (keyName: string) =>
+            `Generating a session public key for ${keyName}...`,
+          sessionEstablished: (keyName: string) => `Connected to ${keyName}.`
         },
         error: {
           notInGitRepo:
@@ -224,8 +227,7 @@ const strings = {
         patchParseFailure: 'WARNING: Failed to parse patch data.',
         configParseFailure: 'WARNING: Failed to parse config data.',
         headerParseFailure: 'WARNING: Failed to parse header.',
-        invalidPatchSignature:
-          'WARNING: Ignoring patch with an invalid signature.',
+        corruptedRequest: 'WARNING: Ignoring a corrupted request',
         headMismatch: (name: string, email: string) =>
           `WARNING: Ignoring a patch from ${name} <${email}> because they are in a different commit than you.`
       },
