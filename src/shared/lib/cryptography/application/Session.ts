@@ -37,6 +37,16 @@ export default class Session {
 
   salt: Buffer
 
+  pollForSession = (): Promise<void> => {
+    if (!this.sessionPrivateKey) {
+      this.sendSessionRequest()
+      return new Promise((resolve) =>
+        setTimeout(() => resolve(this.pollForSession()), 1000)
+      )
+    }
+    return Promise.resolve()
+  }
+
   calculateSecrets = (sessionResponse: SessionResponse) => {
     if (!this.sessionPrivateKey) {
       const salt =
@@ -185,5 +195,6 @@ export default class Session {
     this.dh = dh
     this.sessionPublicKey = this.dh.generateKeys()
     this.salt = randomBytes(saltBytes)
+    this.pollForSession()
   }
 }
