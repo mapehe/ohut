@@ -9,6 +9,7 @@ import {
 import {
   getTrustedKeys,
   isYes,
+  keyToBuffer,
   question,
   validPublicKey
 } from '../../shared/lib/util'
@@ -49,8 +50,7 @@ const readKeyFile = (filename: string): string => {
 const duplicateCheck = (data: string) => {
   const trustedKeys = getTrustedKeys(trustedKeysDir)
   const duplicate = trustedKeys.find(
-    ({ key }) =>
-      key.export({ format: 'pem', type: 'pkcs1' }).toString() === data
+    ({ key }) => keyToBuffer(key).toString(encoding) === data
   )
   if (!duplicate) {
     return data

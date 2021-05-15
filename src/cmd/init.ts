@@ -6,7 +6,7 @@ import {
   trustedKeysDir,
   defaultConfig
 } from '../shared/const/global'
-import generateKeys from '../shared/lib/cryptography/generic/keys'
+import generateKeys from '../shared/lib/cryptography/generic/generateKeys'
 
 const fs = require('fs')
 

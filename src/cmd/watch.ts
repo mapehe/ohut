@@ -1,17 +1,18 @@
 import { getHead, applyPatch, isGitRepo } from '../shared/lib/console'
-import { initSocket, registerLocalListeners } from '../shared/lib/event/init'
+import {
+  initEventHandlers,
+  registerLocalListeners
+} from '../shared/lib/event/init'
 import { Config, Keys, NamedKey } from '../shared/const/types'
 import { trustedKeysDir } from '../shared/const/global'
 import { getConfig, getKeys, getTrustedKeys } from '../shared/lib/util'
 import strings from '../shared/const/strings'
-import { emitPatch } from '../shared/lib/event/socketEmitters'
 import EventQueue from '../shared/const/class/EventQueue'
-
-const loadingSpinner = require('loading-spinner')
+import RequestHandlers from '../shared/lib/event/RequestHandlers'
 
 const eventLoop = async (
   events: EventQueue,
-  socket: any,
+  requestHandlers: RequestHandlers,
   config: Config,
   keys: Keys,
   destinationKeys: NamedKey[],
@@ -36,9 +37,7 @@ const eventLoop = async (
     events.remote.flush()
   } else if (latestLocalEvent) {
     if (!passive) {
-      await Promise.all(
-        destinationKeys.map((key) => emitPatch(head, socket, keys, key.key))
-      )
+      requestHandlers.sendPatch()
     }
     events.local.flush()
   }
@@ -48,7 +47,7 @@ const eventLoop = async (
       resolve(
         eventLoop(
           events,
-          socket,
+          requestHandlers,
           config,
           keys,
           destinationKeys,
@@ -88,17 +87,16 @@ export const watch = async (
     const senderKeys = destinationKeys
     if (await isGitRepo()) {
       if (destinationKeys.length > 0) {
-        const socket = initSocket(
+        const eventHandlers = await initEventHandlers(
           eventQueue,
           host.url,
           keys,
-          senderKeys,
-          loadingSpinner
+          senderKeys
         )
         registerLocalListeners(eventQueue)
         await eventLoop(
           eventQueue,
-          socket,
+          eventHandlers,
           config,
           keys,
           destinationKeys,

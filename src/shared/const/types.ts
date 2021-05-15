@@ -1,5 +1,14 @@
 import { KeyObject } from 'crypto'
 
+export type RequestType = 'patch' | 'session_request' | 'session_response'
+
+export type SocketIOEvent =
+  | 'connect'
+  | 'connect-error'
+  | 'patch'
+  | 'hello'
+  | 'challenge'
+
 export type Config = {
   servers: { name: string; url: string }[]
 }
@@ -45,18 +54,26 @@ export type DecryptedPatch = {
 }
 
 export type EncryptedPatch = {
+  data: Buffer
+  iv: Buffer
+}
+
+export type SessionResponse = {
+  destinationKey: string
+  publicSessionKey: Buffer
+  salt: Buffer
+}
+
+export type SessionRequest = {
+  destinationKey: string
+}
+
+export type Request = {
   destinationKey: Buffer
   senderKey: Buffer
-  data: Buffer
-  header: Buffer
+  type: RequestType
+  data: EncryptedPatch | SessionRequest | SessionResponse
   signature: Buffer
 }
 
 export type ConsoleOutput = { stdout: string; stderr: string }
-
-export type SocketIOEvent =
-  | 'connect'
-  | 'connect-error'
-  | 'patch'
-  | 'hello'
-  | 'challenge'

@@ -1,17 +1,12 @@
+import RequestHandlers from './RequestHandlers'
 import EventQueue from '../../const/class/EventQueue'
-import {
-  EncryptedPatch,
-  Keys,
-  SocketIOEvent,
-  NamedKey
-} from '../../const/types'
-import { connectSocket } from './socketEmitters'
+import { Keys, SocketIOEvent, NamedKey, Request } from '../../const/types'
+import connectSocket from './socketEmitters'
 import {
   challengeHandler,
   connectErrorHandler,
   connectHandler,
-  helloHandler,
-  patchHandler
+  helloHandler
 } from './socketReceivers'
 
 const chokidar = require('chokidar')
@@ -22,21 +17,21 @@ const registerSocketEventHandler = (
   handler: any
 ) => socket.on(event, handler)
 
-export const registerSocketReceivers = (
-  socket: any,
+export const registerSocketReceivers = async (
   senderKeys: NamedKey[],
   eventQueue: EventQueue,
   keys: Keys,
-  loadingSpinner: any
-) => {
-  registerSocketEventHandler('connect', socket, () =>
-    connectHandler(loadingSpinner)
-  )
+  host: string
+): Promise<RequestHandlers> => {
+  const socket = connectSocket(host)
+  const initEventHandlers = new RequestHandlers(keys, senderKeys, socket)
+
+  registerSocketEventHandler('connect', socket, () => connectHandler())
   registerSocketEventHandler('connect-error', socket, (error: any) =>
     connectErrorHandler(error)
   )
-  registerSocketEventHandler('patch', socket, (patch: EncryptedPatch) =>
-    patchHandler(patch, senderKeys, eventQueue, keys)
+  registerSocketEventHandler('patch', socket, (remoteEvent: Request) =>
+    initEventHandlers.handleRequest(remoteEvent, eventQueue)
   )
   registerSocketEventHandler('hello', socket, (message: string) =>
     helloHandler(message)
@@ -45,23 +40,16 @@ export const registerSocketReceivers = (
     challengeHandler(challenge, socket, keys)
   )
 
-  return socket
+  return initEventHandlers
 }
 
-export const initSocket = (
+export const initEventHandlers = (
   eventQueue: EventQueue,
   host: string,
   keys: Keys,
-  senderKeys: NamedKey[],
-  loadingSpinner: any
-) =>
-  registerSocketReceivers(
-    connectSocket(host, keys, loadingSpinner),
-    senderKeys,
-    eventQueue,
-    keys,
-    loadingSpinner
-  )
+  senderKeys: NamedKey[]
+): Promise<RequestHandlers> =>
+  registerSocketReceivers(senderKeys, eventQueue, keys, host)
 
 export const registerLocalListeners = (eventQueue: EventQueue) => {
   chokidar.watch('.').on('all', (event: string, path: string) => {
