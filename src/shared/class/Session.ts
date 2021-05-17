@@ -1,5 +1,5 @@
 import { KeyObject, DiffieHellman, pbkdf2Sync, randomBytes } from 'crypto'
-import EventQueue from '../../../const/class/EventQueue'
+import EventQueue from './EventQueue'
 import {
   symmetricKeyBytes,
   pbkdf2SyncPasses,
@@ -7,19 +7,19 @@ import {
   saltBytes,
   diffieHellmanGenerator,
   diffieHellmanPrime
-} from '../../../const/global'
-import strings from '../../../const/strings'
+} from '../const/global'
+import strings from '../const/strings'
+import { Patch, Request, Keys, NamedKey, SessionRequest } from '../const/types'
+import { checkPatchHead, keyToBuffer } from '../lib/util'
 import {
-  Patch,
-  Request,
-  Keys,
-  NamedKey,
-  SessionRequest
-} from '../../../const/types'
-import { checkPatchHead, keyToBuffer } from '../../util'
-import { decryptPatch, encryptPatch } from './patch'
-import { createSessionRequest, createSessionResponse } from './sessionEvents'
-import validateRequest from './validate'
+  decryptPatch,
+  encryptPatch
+} from '../lib/cryptography/application/patch'
+import {
+  createSessionRequest,
+  createSessionResponse
+} from '../lib/cryptography/application/sessionEvents'
+import validateRequest from '../lib/cryptography/application/validate'
 
 const { createDiffieHellman } = require('crypto')
 

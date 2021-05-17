@@ -2,9 +2,7 @@ import { privateDecrypt } from 'crypto'
 import { Keys } from '../../const/types'
 import hashData from '../cryptography/generic/hash'
 
-export const connectHandler = () => {
-  console.log()
-}
+export const connectHandler = () => {}
 
 export const connectErrorHandler = (error: any) => {
   console.log(`ERROR: ${error.message}`)

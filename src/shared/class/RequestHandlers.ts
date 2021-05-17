@@ -1,21 +1,25 @@
-import { encoding } from '../../const/global'
-import { Keys, Request, Patch, NamedKey } from '../../const/types'
-import EventQueue from '../../const/class/EventQueue'
-import { getDiff, getGitConfig, getHead } from '../console'
-import { keyToBuffer, parseAuthorInfo } from '../util'
-import Session from '../cryptography/application/Session'
+import { encoding } from '../const/global'
+import { Keys, Request, Patch, NamedKey } from '../const/types'
+import EventQueue from './EventQueue'
+import { getDiff, getGitConfig, getHead } from '../lib/console'
+import { keyToBuffer, parseAuthorInfo } from '../lib/util'
+import Session from './Session'
 
 export default class RequestHandlers {
   sessions: Session[]
 
   handleRequest = (request: Request, eventQueue: EventQueue) => {
-    this.sessions
-      .find(
-        (session) =>
-          keyToBuffer(session.destinationKey).toString(encoding) ===
-          request.senderKey.toString(encoding)
-      )
-      ?.handleRequest(request, eventQueue)
+    try {
+      this.sessions
+        .find(
+          (session) =>
+            keyToBuffer(session.destinationKey).toString(encoding) ===
+            request.senderKey.toString(encoding)
+        )
+        ?.handleRequest(request, eventQueue)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   sendPatch = async () => {
