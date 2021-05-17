@@ -20,6 +20,11 @@ const strings = {
           name: 'passive',
           alias: 'p',
           describe: 'Only receive patches.'
+        },
+        force: {
+          name: 'force',
+          alias: 'f',
+          describe: 'Use force.'
         }
       },
       option: {
@@ -124,7 +129,12 @@ const strings = {
           applyPatch: (authorName: string, authorEmail: string) =>
             `Applying an updated patch from ${authorName} <${authorEmail}>.`,
           connectingTo: (host: string) =>
-            `Establishing a connection to ${host}...`
+            `Establishing a connection to ${host} and generating session secrets...`,
+          generatingSessionPublicKey: (keyName: string) =>
+            `Generating a session public key for ${keyName}...`,
+          sessionEstablished: (keyName: string) => `Connected to ${keyName}.`,
+          reconnecting: (keyName: string) =>
+            `Received a reconnection request from ${keyName}, generating new session secret...`
         },
         error: {
           notInGitRepo:
@@ -133,7 +143,8 @@ const strings = {
           invalidTrustedKeyName: (keyName: string) =>
             `ERROR: No such trusted key ${keyName}.`,
           noSuchServer: (serverName: string) =>
-            `ERROR: No such server ${serverName}.`
+            `ERROR: No such server ${serverName}.`,
+          insecureURL: 'Please use HTTPS. Use --force to reconnect anyway.'
         }
       },
       server: {
@@ -224,8 +235,7 @@ const strings = {
         patchParseFailure: 'WARNING: Failed to parse patch data.',
         configParseFailure: 'WARNING: Failed to parse config data.',
         headerParseFailure: 'WARNING: Failed to parse header.',
-        invalidPatchSignature:
-          'WARNING: Ignoring patch with an invalid signature.',
+        corruptedRequest: 'WARNING: Ignoring a corrupted request',
         headMismatch: (name: string, email: string) =>
           `WARNING: Ignoring a patch from ${name} <${email}> because they are in a different commit than you.`
       },

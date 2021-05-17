@@ -1,9 +1,10 @@
+import { encoding } from '../../shared/const/global'
 import strings from '../../shared/const/strings'
-import { getKeys } from '../../shared/lib/util'
+import { getKeys, keyToBuffer } from '../../shared/lib/util'
 
 const print = async () => {
   const { publicKey } = getKeys()
-  const str = publicKey.export({ format: 'pem', type: 'pkcs1' }).toString()
+  const str = keyToBuffer(publicKey).toString(encoding)
   process.stdout.write(str)
 }
 

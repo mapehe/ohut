@@ -1,17 +1,18 @@
 import { getHead, applyPatch, isGitRepo } from '../shared/lib/console'
-import { initSocket, registerLocalListeners } from '../shared/lib/event/init'
+import {
+  initEventHandlers,
+  registerLocalListeners
+} from '../shared/lib/event/init'
 import { Config, Keys, NamedKey } from '../shared/const/types'
 import { trustedKeysDir } from '../shared/const/global'
 import { getConfig, getKeys, getTrustedKeys } from '../shared/lib/util'
 import strings from '../shared/const/strings'
-import { emitPatch } from '../shared/lib/event/socketEmitters'
-import EventQueue from '../shared/const/class/EventQueue'
-
-const loadingSpinner = require('loading-spinner')
+import EventQueue from '../shared/class/EventQueue'
+import RequestHandlers from '../shared/class/RequestHandlers'
 
 const eventLoop = async (
   events: EventQueue,
-  socket: any,
+  requestHandlers: RequestHandlers,
   config: Config,
   keys: Keys,
   destinationKeys: NamedKey[],
@@ -36,9 +37,7 @@ const eventLoop = async (
     events.remote.flush()
   } else if (latestLocalEvent) {
     if (!passive) {
-      await Promise.all(
-        destinationKeys.map((key) => emitPatch(head, socket, keys, key.key))
-      )
+      requestHandlers.sendPatch()
     }
     events.local.flush()
   }
@@ -48,7 +47,7 @@ const eventLoop = async (
       resolve(
         eventLoop(
           events,
-          socket,
+          requestHandlers,
           config,
           keys,
           destinationKeys,
@@ -66,12 +65,16 @@ export const watch = async (
   keyNames: string[],
   allKeys: boolean,
   passive: boolean,
+  force: boolean,
   debounceRate: number,
   refreshRate: number,
   tmpFile: string
 ) => {
   const config = getConfig()
   const host = config.servers.find(({ name }) => name === serverName)
+  if (force) {
+    console.log(strings.log.shared.info.usingForce)
+  }
   if (host) {
     const eventQueue = new EventQueue(debounceRate)
     const keys = getKeys()
@@ -88,17 +91,17 @@ export const watch = async (
     const senderKeys = destinationKeys
     if (await isGitRepo()) {
       if (destinationKeys.length > 0) {
-        const socket = initSocket(
+        const eventHandlers = await initEventHandlers(
           eventQueue,
           host.url,
           keys,
           senderKeys,
-          loadingSpinner
+          force
         )
         registerLocalListeners(eventQueue)
         await eventLoop(
           eventQueue,
-          socket,
+          eventHandlers,
           config,
           keys,
           destinationKeys,
@@ -121,6 +124,15 @@ export const { command, desc } = strings.cmd.watch
 export const builder = (yargs: any) => {
   yargs
     .boolean(strings.cmd.watch.boolean.allKeys.name)
+    .alias(
+      strings.cmd.watch.boolean.allKeys.name,
+      strings.cmd.watch.boolean.allKeys.alias
+    )
+    .describe(
+      strings.cmd.watch.boolean.allKeys.name,
+      strings.cmd.watch.boolean.allKeys.describe
+    )
+    .boolean(strings.cmd.watch.boolean.force.name)
     .alias(
       strings.cmd.watch.boolean.allKeys.name,
       strings.cmd.watch.boolean.allKeys.alias
@@ -194,6 +206,7 @@ export const handler = (argv: any) => {
     keyNames,
     argv[strings.cmd.watch.boolean.allKeys.name],
     argv[strings.cmd.watch.boolean.passive.name],
+    argv[strings.cmd.watch.boolean.force.name],
     argv[strings.cmd.watch.option.debounceRate.name],
     argv[strings.cmd.watch.option.refreshRate.name],
     argv[strings.cmd.watch.option.tmpFile.name] ||

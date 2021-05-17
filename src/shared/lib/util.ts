@@ -1,4 +1,4 @@
-import { createPrivateKey, createPublicKey } from 'crypto'
+import { createPrivateKey, createPublicKey, KeyObject } from 'crypto'
 import {
   configFile,
   configPadding,
@@ -7,7 +7,8 @@ import {
   publicKeyFile
 } from '../const/global'
 import strings from '../const/strings'
-import { Config, Keys, NamedKey } from '../const/types'
+import { Config, Keys, NamedKey, Patch } from '../const/types'
+import { getHead } from './console'
 import { parseConfig } from './parsers'
 
 const fs = require('fs')
@@ -90,15 +91,14 @@ export const getKeys = (): Keys => {
   }
 }
 
+export const keyToBuffer = (key: KeyObject): Buffer =>
+  Buffer.from(key.export({ format: 'pem', type: 'pkcs1' }).toString(), encoding)
+
 export const writeKeys = (keys: Keys) => {
   try {
     const { publicKey, privateKey } = keys
-    const publicKeyStr = publicKey
-      .export({ format: 'pem', type: 'pkcs1' })
-      .toString()
-    const privateKeyStr = privateKey
-      .export({ format: 'pem', type: 'pkcs8' })
-      .toString()
+    const publicKeyStr = keyToBuffer(publicKey).toString(encoding)
+    const privateKeyStr = keyToBuffer(privateKey).toString(encoding)
     fs.writeFileSync(publicKeyFile, publicKeyStr)
     fs.writeFileSync(privateKeyFile, privateKeyStr)
   } catch {
@@ -115,4 +115,16 @@ export const updateConfig = (config: Config) => {
   } catch {
     throw strings.log.shared.error.configWriteFailed
   }
+}
+
+export const checkPatchHead = async (patch: Patch): Promise<boolean> => {
+  const { stdout: head } = await getHead()
+  if (head === patch.head) {
+    return true
+  }
+  const { name, email } = patch.author
+  throw strings.log.shared.warning.headMismatch(
+    name || strings.common.unknown,
+    email || strings.common.unknown
+  )
 }
