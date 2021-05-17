@@ -5,8 +5,8 @@ instances of a git repo in sync in real time. Any time a file system event is re
 patch is sent through a simple [relay server](https://github.com/three-consulting/ohut-server)
 and applied a the receiving end. All `ohut` traffic is end-to-end encrypted and signed.
 
-The use-case for this tool arose during the pandemic: All work went remote and whenever there was
-a need to collaborate on something in real-time, it usually either ended up to sharing the screen through
+The need for this kind of a tool arose during the pandemic: All work went remote and whenever we
+needed to collaborate on something in real-time, it usually either ended up to sharing the screen through
 a video call, leaving the others unable to actively work on the code, or or to using special (huge)
 editor plugins which never seemed to really work.
 
@@ -16,13 +16,16 @@ that you instantly see each others changes in your favorite editors. The hard pr
 solved by existing technologies such as git, [socket.io](https://github.com/socketio/socket.io) and
 [chokidar](https://github.com/paulmillr/chokidar).
 
+`ohut` works exclusively with the staging area of git so it will not mess up your commit history. It
+tries to combine the local and remote changes hunk by hunk with as little destruction as possible.
+
 Install `ohut` via npm:
 
 ```
 npm install --global ohut
 ```
 
-The project is currently at a proof-of-concept stage. You are encouraged to open up issues on bugs,
+The tool is currently at a proof-of-concept stage. You are encouraged to open up issues on bugs,
 feature requests and security.
 
 ## Setting up
@@ -39,7 +42,9 @@ ohut init
 ```
 
 This will, among other things generate a key pair that `ohut` will use. After initialization,
-you can display your public key with `ohut key print`.
+you can display your public key with `ohut key print`. This public key acts as your digital
+identity when using `ohut`. It will be used to sign anything you send to your peers to prove
+that the data really is from you.
 
 ### Adding a server
 
@@ -62,8 +67,8 @@ If you want to host your own instance instead, the setup should be trivial.
 
 ### Adding a trusted key
 
-Patches can only be sent to and received from a client whose public key `ohut` has
-been told to trust. This means you'll have to to share your public key with your
+Patches can only be sent to and received from a trusted user: A client whose public key `ohut`
+has been told to trust. This means you'll have to to share your public key with your
 peer before using `ohut` together. Print your public key with:
 
 ```
@@ -104,7 +109,7 @@ in encrypting your traffic. When this happens, `ohut` will log
 Conected to [peer].
 ```
 
-and you are ready to work together!
+and you are ready to work together! When you receive patches, you'll notice `ohut` logging things.
 
 For example, if Alice has added a server called `tpc` and wants to send and receive patches from Bob, whose
 trusted key is called `bob`, they can run:

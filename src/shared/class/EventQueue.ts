@@ -1,4 +1,4 @@
-import { Patch, FsEvent } from '../types'
+import { Patch, FsEvent } from '../const/types'
 import DebouncedArray from './DebouncedArray'
 
 export default class EventQueue {

@@ -7,8 +7,8 @@ import { Config, Keys, NamedKey } from '../shared/const/types'
 import { trustedKeysDir } from '../shared/const/global'
 import { getConfig, getKeys, getTrustedKeys } from '../shared/lib/util'
 import strings from '../shared/const/strings'
-import EventQueue from '../shared/const/class/EventQueue'
-import RequestHandlers from '../shared/lib/event/RequestHandlers'
+import EventQueue from '../shared/class/EventQueue'
+import RequestHandlers from '../shared/class/RequestHandlers'
 
 const eventLoop = async (
   events: EventQueue,

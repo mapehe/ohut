@@ -1,5 +1,5 @@
-import RequestHandlers from './RequestHandlers'
-import EventQueue from '../../const/class/EventQueue'
+import RequestHandlers from '../../class/RequestHandlers'
+import EventQueue from '../../class/EventQueue'
 import { Keys, SocketIOEvent, NamedKey, Request } from '../../const/types'
 import connectSocket from './socketEmitters'
 import {
