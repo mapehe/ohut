@@ -17,8 +17,9 @@ const validateRequest = (
     request.senderKey,
     request.signature
   )
-  const validDestination =
-    destinationKey === keyToBuffer(correctDestination).toString(encoding)
+  const validDestination = keyToBuffer(correctDestination).equals(
+    Buffer.from(destinationKey)
+  )
   const validSender =
     request.senderKey.toString(encoding) ===
     keyToBuffer(correctSender).toString(encoding)

@@ -4,14 +4,15 @@ import {
   symmetricKeyBytes,
   pbkdf2SyncPasses,
   pbkdf2HashAlgorithm,
-  saltBytes
+  saltBytes,
+  diffieHellmanGenerator,
+  diffieHellmanPrime
 } from '../../../const/global'
 import strings from '../../../const/strings'
 import {
   Patch,
   Request,
   Keys,
-  SessionResponse,
   NamedKey,
   SessionRequest
 } from '../../../const/types'
@@ -19,6 +20,8 @@ import { checkPatchHead, keyToBuffer } from '../../util'
 import { decryptPatch, encryptPatch } from './patch'
 import { createSessionRequest, createSessionResponse } from './sessionEvents'
 import validateRequest from './validate'
+
+const { createDiffieHellman } = require('crypto')
 
 export default class Session {
   signatureKeys: Keys
@@ -33,37 +36,36 @@ export default class Session {
 
   sessionPublicKey: Buffer
 
+  salt: Buffer
+
   sessionPrivateKey: Buffer | undefined = undefined
 
-  salt: Buffer
+  remoteSessionPublicKey: Buffer | undefined = undefined
 
   pollForSession = (): Promise<void> => {
     if (!this.sessionPrivateKey) {
       this.sendSessionRequest()
-      return new Promise((resolve) =>
-        setTimeout(() => resolve(this.pollForSession()), 1000)
-      )
     }
-    return Promise.resolve()
+    return new Promise((resolve) =>
+      setTimeout(() => resolve(this.pollForSession()), 1000)
+    )
   }
 
-  calculateSecrets = (sessionResponse: SessionResponse) => {
-    if (!this.sessionPrivateKey) {
-      const salt =
-        this.sessionPublicKey.toString('hex') >
-        sessionResponse.publicSessionKey.toString('hex')
-          ? this.salt
-          : sessionResponse.salt
-      const secret = this.dh.computeSecret(sessionResponse.publicSessionKey)
-      this.sessionPrivateKey = pbkdf2Sync(
-        secret,
-        salt,
-        pbkdf2SyncPasses,
-        symmetricKeyBytes,
-        pbkdf2HashAlgorithm
-      )
-      console.log(strings.log.cmd.watch.info.sessionEstablished(this.keyName))
-    }
+  calculateSecrets = (sessionResponse: SessionRequest) => {
+    const salt =
+      this.sessionPublicKey.toString('hex') >
+      sessionResponse.publicSessionKey.toString('hex')
+        ? this.salt
+        : sessionResponse.salt
+    const secret = this.dh.computeSecret(sessionResponse.publicSessionKey)
+    this.sessionPrivateKey = pbkdf2Sync(
+      secret,
+      salt,
+      pbkdf2SyncPasses,
+      symmetricKeyBytes,
+      pbkdf2HashAlgorithm
+    )
+    console.log(strings.log.cmd.watch.info.sessionEstablished(this.keyName))
   }
 
   /*
@@ -75,21 +77,21 @@ export default class Session {
       const remoteEvent = encryptPatch(
         {
           ...patch,
-          destinationKey: keyToBuffer(this.destinationKey).toString()
+          destinationKey: keyToBuffer(this.destinationKey)
         },
         this.sessionPrivateKey,
         this.signatureKeys,
         this.destinationKey
       )
       this.socket.emit('patch', remoteEvent)
-    } else {
-      this.sendSessionRequest()
     }
   }
 
   sendSessionRequest = () => {
     const remoteEvent = createSessionRequest(
+      this.sessionPublicKey,
       this.destinationKey,
+      this.salt,
       this.signatureKeys
     )
     return this.socket.emit('patch', remoteEvent)
@@ -110,7 +112,8 @@ export default class Session {
   */
 
   handleSessionRequest = (request: Request) => {
-    const stringData = JSON.stringify(request.data as SessionRequest)
+    const requestData = request.data as SessionRequest
+    const stringData = JSON.stringify(requestData)
     if (
       validateRequest(
         request,
@@ -119,17 +122,26 @@ export default class Session {
         this.destinationKey
       )
     ) {
-      this.sendSessionResponse()
-      if (!this.sessionPrivateKey) {
-        setTimeout(() => {
-          this.sendSessionRequest()
-        }, 1000)
+      if (
+        this.remoteSessionPublicKey &&
+        !requestData.publicSessionKey.equals(this.remoteSessionPublicKey)
+      ) {
+        console.log(strings.log.cmd.watch.info.reconnecting(this.keyName))
+        this.remoteSessionPublicKey = requestData.publicSessionKey
+        this.createSessionKeys()
+        this.calculateSecrets(requestData)
+        this.sendSessionResponse()
+      } else if (!this.remoteSessionPublicKey) {
+        this.remoteSessionPublicKey = requestData.publicSessionKey
+        this.calculateSecrets(requestData)
+        this.sendSessionResponse()
       }
     }
   }
 
   handleSessionResponse = (request: Request) => {
-    const stringData = JSON.stringify(request.data as SessionResponse)
+    const requestData = request.data as SessionRequest
+    const stringData = JSON.stringify(requestData)
     if (
       validateRequest(
         request,
@@ -138,7 +150,18 @@ export default class Session {
         this.destinationKey
       )
     ) {
-      this.calculateSecrets(request.data as SessionResponse)
+      if (
+        this.remoteSessionPublicKey &&
+        !requestData.publicSessionKey.equals(this.remoteSessionPublicKey)
+      ) {
+        console.log(strings.log.cmd.watch.info.reconnecting(this.keyName))
+        this.remoteSessionPublicKey = requestData.publicSessionKey
+        this.createSessionKeys()
+        this.calculateSecrets(requestData)
+      } else if (!this.remoteSessionPublicKey) {
+        this.remoteSessionPublicKey = requestData.publicSessionKey
+        this.calculateSecrets(requestData)
+      }
     }
   }
 
@@ -182,19 +205,18 @@ export default class Session {
     }
   }
 
-  constructor(
-    keys: Keys,
-    destinationKey: NamedKey,
-    socket: any,
-    dh: DiffieHellman
-  ) {
+  createSessionKeys = () => {
+    this.dh = createDiffieHellman(diffieHellmanPrime, diffieHellmanGenerator)
+    this.sessionPublicKey = this.dh.generateKeys()
+    this.salt = randomBytes(saltBytes)
+  }
+
+  constructor(keys: Keys, destinationKey: NamedKey, socket: any) {
     this.destinationKey = destinationKey.key
     this.keyName = destinationKey.name
     this.socket = socket
     this.signatureKeys = keys
-    this.dh = dh
-    this.sessionPublicKey = this.dh.generateKeys()
-    this.salt = randomBytes(saltBytes)
+    this.createSessionKeys()
     this.pollForSession()
   }
 }

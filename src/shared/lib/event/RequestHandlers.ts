@@ -1,15 +1,9 @@
-import {
-  diffieHellmanGenerator,
-  diffieHellmanPrime,
-  encoding
-} from '../../const/global'
+import { encoding } from '../../const/global'
 import { Keys, Request, Patch, NamedKey } from '../../const/types'
 import EventQueue from '../../const/class/EventQueue'
 import { getDiff, getGitConfig, getHead } from '../console'
 import { keyToBuffer, parseAuthorInfo } from '../util'
 import Session from '../cryptography/application/Session'
-
-const { createDiffieHellman } = require('crypto')
 
 export default class RequestHandlers {
   sessions: Session[]
@@ -39,9 +33,8 @@ export default class RequestHandlers {
   }
 
   constructor(keys: Keys, destinationKeys: NamedKey[], socket: any) {
-    this.sessions = destinationKeys.map((destinationKey) => {
-      const dh = createDiffieHellman(diffieHellmanPrime, diffieHellmanGenerator)
-      return new Session(keys, destinationKey, socket, dh)
-    })
+    this.sessions = destinationKeys.map(
+      (destinationKey) => new Session(keys, destinationKey, socket)
+    )
   }
 }
