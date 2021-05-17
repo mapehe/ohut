@@ -20,6 +20,11 @@ const strings = {
           name: 'passive',
           alias: 'p',
           describe: 'Only receive patches.'
+        },
+        force: {
+          name: 'force',
+          alias: 'f',
+          describe: 'Use force.'
         }
       },
       option: {
@@ -138,7 +143,8 @@ const strings = {
           invalidTrustedKeyName: (keyName: string) =>
             `ERROR: No such trusted key ${keyName}.`,
           noSuchServer: (serverName: string) =>
-            `ERROR: No such server ${serverName}.`
+            `ERROR: No such server ${serverName}.`,
+          insecureURL: 'Please use HTTPS. Use --force to reconnect anyway.'
         }
       },
       server: {

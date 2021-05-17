@@ -65,12 +65,16 @@ export const watch = async (
   keyNames: string[],
   allKeys: boolean,
   passive: boolean,
+  force: boolean,
   debounceRate: number,
   refreshRate: number,
   tmpFile: string
 ) => {
   const config = getConfig()
   const host = config.servers.find(({ name }) => name === serverName)
+  if (force) {
+    console.log(strings.log.shared.info.usingForce)
+  }
   if (host) {
     const eventQueue = new EventQueue(debounceRate)
     const keys = getKeys()
@@ -91,7 +95,8 @@ export const watch = async (
           eventQueue,
           host.url,
           keys,
-          senderKeys
+          senderKeys,
+          force
         )
         registerLocalListeners(eventQueue)
         await eventLoop(
@@ -119,6 +124,15 @@ export const { command, desc } = strings.cmd.watch
 export const builder = (yargs: any) => {
   yargs
     .boolean(strings.cmd.watch.boolean.allKeys.name)
+    .alias(
+      strings.cmd.watch.boolean.allKeys.name,
+      strings.cmd.watch.boolean.allKeys.alias
+    )
+    .describe(
+      strings.cmd.watch.boolean.allKeys.name,
+      strings.cmd.watch.boolean.allKeys.describe
+    )
+    .boolean(strings.cmd.watch.boolean.force.name)
     .alias(
       strings.cmd.watch.boolean.allKeys.name,
       strings.cmd.watch.boolean.allKeys.alias
@@ -192,6 +206,7 @@ export const handler = (argv: any) => {
     keyNames,
     argv[strings.cmd.watch.boolean.allKeys.name],
     argv[strings.cmd.watch.boolean.passive.name],
+    argv[strings.cmd.watch.boolean.force.name],
     argv[strings.cmd.watch.option.debounceRate.name],
     argv[strings.cmd.watch.option.refreshRate.name],
     argv[strings.cmd.watch.option.tmpFile.name] ||

@@ -17,21 +17,22 @@ const registerSocketEventHandler = (
   handler: any
 ) => socket.on(event, handler)
 
-export const registerSocketReceivers = async (
-  senderKeys: NamedKey[],
+export const initEventHandlers = async (
   eventQueue: EventQueue,
+  host: string,
   keys: Keys,
-  host: string
+  senderKeys: NamedKey[],
+  force: boolean
 ): Promise<RequestHandlers> => {
-  const socket = connectSocket(host)
-  const initEventHandlers = new RequestHandlers(keys, senderKeys, socket)
+  const socket = connectSocket(host, force)
+  const requestHandlers = new RequestHandlers(keys, senderKeys, socket)
 
   registerSocketEventHandler('connect', socket, () => connectHandler())
   registerSocketEventHandler('connect-error', socket, (error: any) =>
     connectErrorHandler(error)
   )
   registerSocketEventHandler('patch', socket, (remoteEvent: Request) =>
-    initEventHandlers.handleRequest(remoteEvent, eventQueue)
+    requestHandlers.handleRequest(remoteEvent, eventQueue)
   )
   registerSocketEventHandler('hello', socket, (message: string) =>
     helloHandler(message)
@@ -40,16 +41,8 @@ export const registerSocketReceivers = async (
     challengeHandler(challenge, socket, keys)
   )
 
-  return initEventHandlers
+  return requestHandlers
 }
-
-export const initEventHandlers = (
-  eventQueue: EventQueue,
-  host: string,
-  keys: Keys,
-  senderKeys: NamedKey[]
-): Promise<RequestHandlers> =>
-  registerSocketReceivers(senderKeys, eventQueue, keys, host)
 
 export const registerLocalListeners = (eventQueue: EventQueue) => {
   chokidar.watch('.').on('all', (event: string, path: string) => {
