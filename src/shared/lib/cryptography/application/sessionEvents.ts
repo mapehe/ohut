@@ -1,23 +1,24 @@
 import { KeyObject } from 'crypto'
 import { encoding } from '../../../const/global'
 import {
-  SessionResponse,
   Request,
   Keys,
-  SessionRequest
+  SessionRequest,
+  RequestType
 } from '../../../const/types'
 import { keyToBuffer } from '../../util'
 import { signData } from '../generic/sign'
 
-export const createSessionResponse = (
+const sessionRequest = (
   sessionPublicKey: Buffer,
   destinationKey: KeyObject,
   salt: Buffer,
-  signatureKeys: Keys
+  signatureKeys: Keys,
+  type: RequestType
 ): Request => {
-  const request: SessionResponse = {
+  const request: SessionRequest = {
     publicSessionKey: sessionPublicKey,
-    destinationKey: keyToBuffer(destinationKey).toString(encoding),
+    destinationKey: keyToBuffer(destinationKey),
     salt
   }
   const stringData = Buffer.from(JSON.stringify(request), encoding)
@@ -25,7 +26,7 @@ export const createSessionResponse = (
   const signedRequest: Request = {
     destinationKey: keyToBuffer(destinationKey),
     senderKey: keyToBuffer(signatureKeys.publicKey),
-    type: 'session_response',
+    type,
     signature,
     data: request
   }
@@ -33,20 +34,29 @@ export const createSessionResponse = (
 }
 
 export const createSessionRequest = (
+  sessionPublicKey: Buffer,
   destinationKey: KeyObject,
+  salt: Buffer,
   signatureKeys: Keys
-): Request => {
-  const request: SessionRequest = {
-    destinationKey: keyToBuffer(destinationKey).toString(encoding)
-  }
-  const stringData = Buffer.from(JSON.stringify(request), encoding)
-  const signature = signData(stringData, signatureKeys.privateKey)
-  const signedRequest: Request = {
-    destinationKey: keyToBuffer(destinationKey),
-    senderKey: keyToBuffer(signatureKeys.publicKey),
-    type: 'session_request',
-    signature,
-    data: request
-  }
-  return signedRequest
-}
+) =>
+  sessionRequest(
+    sessionPublicKey,
+    destinationKey,
+    salt,
+    signatureKeys,
+    'session_request'
+  )
+
+export const createSessionResponse = (
+  sessionPublicKey: Buffer,
+  destinationKey: KeyObject,
+  salt: Buffer,
+  signatureKeys: Keys
+) =>
+  sessionRequest(
+    sessionPublicKey,
+    destinationKey,
+    salt,
+    signatureKeys,
+    'session_response'
+  )

@@ -137,9 +137,8 @@ We have tried to make `ohut` easy and smooth to use, but there are some potentia
 
 - Alice and Bob need to be connected to the same server in order to exchange patches.
 
-- Session management is quite primitive at the moment. For example if Alice and Bob are connected and
-  Bob disconnects and reconnects to the server, the session will not be negotiated again. Upon
-  disconnect/reconnect, it's best to simply restart `ohut` at the both ends.
+- `ohut` knows when a session is established, but it doesn't know when a session is disconnected.
+  If Alice and Bob run `ohut watch` and Bob disconnects, Alice will not be notified.
 
 ## Security
 

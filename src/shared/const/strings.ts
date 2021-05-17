@@ -124,10 +124,12 @@ const strings = {
           applyPatch: (authorName: string, authorEmail: string) =>
             `Applying an updated patch from ${authorName} <${authorEmail}>.`,
           connectingTo: (host: string) =>
-            `Establishing a connection to ${host}...`,
+            `Establishing a connection to ${host} and generating session secrets...`,
           generatingSessionPublicKey: (keyName: string) =>
             `Generating a session public key for ${keyName}...`,
-          sessionEstablished: (keyName: string) => `Connected to ${keyName}.`
+          sessionEstablished: (keyName: string) => `Connected to ${keyName}.`,
+          reconnecting: (keyName: string) =>
+            `Received a reconnection request from ${keyName}, generating new session secret...`
         },
         error: {
           notInGitRepo:

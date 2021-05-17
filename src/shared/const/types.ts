@@ -39,7 +39,7 @@ export type Patch = {
 }
 
 export interface PatchWithDestination extends Patch {
-  destinationKey: string
+  destinationKey: Buffer
 }
 
 export type PatchHeader = {
@@ -58,21 +58,17 @@ export type EncryptedPatch = {
   iv: Buffer
 }
 
-export type SessionResponse = {
-  destinationKey: string
+export type SessionRequest = {
+  destinationKey: Buffer
   publicSessionKey: Buffer
   salt: Buffer
-}
-
-export type SessionRequest = {
-  destinationKey: string
 }
 
 export type Request = {
   destinationKey: Buffer
   senderKey: Buffer
   type: RequestType
-  data: EncryptedPatch | SessionRequest | SessionResponse
+  data: EncryptedPatch | SessionRequest
   signature: Buffer
 }
 
